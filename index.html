@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>吃飯記帳 · 每週挑戰</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --primary: #22c55e;
+      --primary-dark: #16a34a;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --border: #334155;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+      padding-bottom: 40px;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding-top: 8px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+
+    /* 主顯示區 */
+    .summary-card {
+      background: linear-gradient(145deg, #1e293b, #0f172a);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    .remaining-label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .remaining-amount {
+      font-size: 2.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+
+    .remaining-amount.positive { color: var(--primary); }
+    .remaining-amount.negative { color: var(--danger); }
+
+    .percent-row {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 12px;
+      font-size: 0.95rem;
+    }
+
+    .percent-item span {
+      display: block;
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .percent-item .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: var(--border);
+      border-radius: 999px;
+      margin-top: 18px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.5s ease, background 0.3s;
+    }
+
+    /* 小統計 */
+    .stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-card .value {
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* 按鈕區 */
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 16px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, opacity 0.15s;
+      flex: 1;
+    }
+
+    button:active {
+      transform: scale(0.97);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #052e16;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    /* 表單 */
+    .form-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+      display: none;
+    }
+
+    .form-card.show {
+      display: block;
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary);
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    /* 支出列表 */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .expense-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .expense-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .expense-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .expense-note {
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .expense-date {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .expense-amount {
+      font-weight: 700;
+      color: var(--danger);
+      margin-left: 12px;
+      white-space: nowrap;
+    }
+
+    .expense-delete {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.2rem;
+      padding: 4px 8px;
+      margin-left: 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .expense-delete:hover {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      padding: 32px 16px;
+      font-size: 0.95rem;
+    }
+
+    /* 設定 */
+    .settings-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      margin-top: 24px;
+    }
+
+    .settings-card h3 {
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+
+    /* 提示 */
+    .hint {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.6;
+    }
+
+    /* 首次設定遮罩 */
+    .setup-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.95);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .setup-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px 24px;
+      width: 100%;
+      max-width: 360px;
+      text-align: center;
+    }
+
+    .setup-box h2 {
+      font-size: 1.4rem;
+      margin-bottom: 8px;
+    }
+
+    .setup-box p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .setup-box input {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.3rem;
+      text-align: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>吃飯記帳</h1>
+      <p>每週挑戰 · 只記吃的</p>
+    </header>
+
+    <!-- 主顯示 -->
+    <div class="summary-card">
+      <div class="remaining-label">還剩</div>
+      <div class="remaining-amount" id="remainingAmount">0 元</div>
+      <div class="percent-row">
+        <div class="percent-item">
+          <span id="usedPercent">0%</span>
+          <div class="label">已用</div>
+        </div>
+        <div class="percent-item">
+          <span id="remainPercent">100%</span>
+          <div class="label">剩餘</div>
+        </div>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressFill" style="width: 0%; background: var(--primary);"></div>
+      </div>
+    </div>
+
+    <!-- 小統計 -->
+    <div class="stats">
+      <div class="stat-card">
+        <div class="value" id="totalAllocated">0</div>
+        <div class="label">累積預算</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="totalSpent">0</div>
+        <div class="label">累積花費</div>
+      </div>
+    </div>
+
+    <!-- 按鈕 -->
+    <div class="actions">
+      <button class="btn-primary" id="btnAddExpense">＋ 記一筆吃的</button>
+      <button class="btn-secondary" id="btnSettings">設定</button>
+    </div>
+
+    <!-- 新增支出表單 -->
+    <div class="form-card" id="expenseForm">
+      <div class="form-group">
+        <label>日期</label>
+        <input type="date" id="expenseDate">
+      </div>
+      <div class="form-group">
+        <label>吃了什麼</label>
+        <input type="text" id="expenseNote" placeholder="例如：肉燥飯" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label>金額（元）</label>
+        <input type="number" id="expenseAmount" placeholder="50" min="1" step="1">
+      </div>
+      <div class="form-actions">
+        <button class="btn-secondary" id="btnCancelExpense">取消</button>
+        <button class="btn-primary" id="btnSaveExpense">存檔</button>
+      </div>
+    </div>
+
+    <!-- 設定表單 -->
+    <div class="form-card" id="settingsForm">
+      <div class="form-group">
+        <label>每週吃飯預算（元）</label>
+        <input type="number" id="weeklyBudgetInput" placeholder="1500" min="100" step="50">
+      </div>
+      <p class="hint" style="text-align:left; margin-bottom:12px;">
+        每到禮拜六會自動加上這筆金額。<br>
+        改變預算只影響「之後」的週次。
+      </p>
+      <div class="form-actions">
+        <button class="btn-secondary" id="btnCancelSettings">取消</button>
+        <button class="btn-primary" id="btnSaveSettings">儲存</button>
+      </div>
+    </div>
+
+    <!-- 支出列表 -->
+    <div class="section-title">
+      <span>最近支出</span>
+      <span style="font-size:0.8rem; color:var(--text-muted);" id="expenseCount">0 筆</span>
+    </div>
+    <div class="expense-list" id="expenseList">
+      <div class="empty-state">還沒記任何一筆～<br>點上面按鈕開始吧！</div>
+    </div>
+
+    <p class="hint">
+      資料存在你的手機瀏覽器裡<br>
+      清掉網站資料就會不見喔
+    </p>
+  </div>
+
+  <!-- 首次設定 -->
+  <div class="setup-overlay" id="setupOverlay">
+    <div class="setup-box">
+      <h2>設定每週預算</h2>
+      <p>每到禮拜六會自動多出這筆錢<br>專門用來吃飯挑戰！</p>
+      <input type="number" id="setupBudget" placeholder="例如 1500" min="100" step="50">
+      <button class="btn-primary" style="width:100%;" id="btnStart">開始挑戰</button>
+    </div>
+  </div>
+
+  <script>
+    // ==================== 資料結構 ====================
+    const STORAGE_KEY = 'foodBudgetApp_v1';
+
+    let state = {
+      weeklyBudget: 0,
+      totalAllocated: 0,
+      lastSaturday: null,   // YYYY-MM-DD of the last Saturday we added budget
+      expenses: []          // { id, date, note, amount }
+    };
+
+    // ==================== 工具函式 ====================
+    function todayStr() {
+      const d = new Date();
+      return d.toISOString().slice(0, 10);
+    }
+
+    function formatDate(dateStr) {
+      // 2025-10-03 → 10/3
+      const [y, m, d] = dateStr.split('-');
+      return `${parseInt(m)}/${parseInt(d)}`;
+    }
+
+    function getMostRecentSaturday(fromDate = new Date()) {
+      const d = new Date(fromDate);
+      d.setHours(0, 0, 0, 0);
+      const day = d.getDay(); // 0=Sun ... 6=Sat
+      const diff = day === 6 ? 0 : (day + 1); // 距離上一個週六的天數
+      d.setDate(d.getDate() - diff);
+      return d.toISOString().slice(0, 10);
+    }
+
+    function daysBetween(dateStr1, dateStr2) {
+      const d1 = new Date(dateStr1);
+      const d2 = new Date(dateStr2);
+      return Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          state = JSON.parse(raw);
+        }
+      } catch (e) {
+        console.error('load error', e);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    // ==================== 核心邏輯：自動加每週預算 ====================
+    function applyWeeklyBudget() {
+      if (state.weeklyBudget <= 0) return;
+
+      const today = todayStr();
+      const currentSat = getMostRecentSaturday();
+
+      if (!state.lastSaturday) {
+        // 第一次：從「現在最近的週六」開始算
+        // 如果今天已經過了週六，就先給這一週的
+        state.totalAllocated = state.weeklyBudget;
+        state.lastSaturday = currentSat;
+        saveState();
+        return;
+      }
+
+      // 計算從 lastSaturday 到 currentSat 中間過了幾個週六
+      // 每個週六間隔 7 天
+      const days = daysBetween(state.lastSaturday, currentSat);
+      if (days >= 7) {
+        const weeks = Math.floor(days / 7);
+        state.totalAllocated += weeks * state.weeklyBudget;
+        state.lastSaturday = currentSat;
+        saveState();
+      }
+    }
+
+    // ==================== 計算 ====================
+    function getTotalSpent() {
+      return state.expenses.reduce((sum, e) => sum + e.amount, 0);
+    }
+
+    function updateUI() {
+      const totalSpent = getTotalSpent();
+      const remaining = state.totalAllocated - totalSpent;
+      const usedPercent = state.totalAllocated > 0
+        ? Math.round((totalSpent / state.totalAllocated) * 100)
+        : 0;
+      const remainPercent = Math.max(0, 100 - usedPercent); // 剩餘% 最低顯示 0（雖然錢可以負）
+
+      // 還剩金額
+      const amountEl = document.getElementById('remainingAmount');
+      amountEl.textContent = `${remaining.toLocaleString()} 元`;
+      amountEl.className = 'remaining-amount ' + (remaining >= 0 ? 'positive' : 'negative');
+
+      // 百分比
+      document.getElementById('usedPercent').textContent = `${usedPercent}%`;
+      document.getElementById('remainPercent').textContent = remaining < 0 ? '負債' : `${remainPercent}%`;
+
+      // 進度條（已用%）
+      const fill = document.getElementById('progressFill');
+      const pct = Math.min(usedPercent, 100);
+      fill.style.width = `${pct}%`;
+      if (usedPercent > 100) {
+        fill.style.background = 'var(--danger)';
+      } else if (usedPercent > 80) {
+        fill.style.background = 'var(--warning)';
+      } else {
+        fill.style.background = 'var(--primary)';
+      }
+
+      // 小統計
+      document.getElementById('totalAllocated').textContent = state.totalAllocated.toLocaleString();
+      document.getElementById('totalSpent').textContent = totalSpent.toLocaleString();
+
+      // 支出列表
+      renderExpenses();
+    }
+
+    function renderExpenses() {
+      const list = document.getElementById('expenseList');
+      const countEl = document.getElementById('expenseCount');
+      const expenses = [...state.expenses].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+
+      countEl.textContent = `${expenses.length} 筆`;
+
+      if (expenses.length === 0) {
+        list.innerHTML = `<div class="empty-state">還沒記任何一筆～<br>點上面按鈕開始吧！</div>`;
+        return;
+      }
+
+      list.innerHTML = expenses.map(e => `
+        <div class="expense-item">
+          <div class="expense-info">
+            <div class="expense-note">${escapeHtml(e.note || '未命名')}</div>
+            <div class="expense-date">${formatDate(e.date)}</div>
+          </div>
+          <div class="expense-amount">-${e.amount}</div>
+          <button class="expense-delete" data-id="${e.id}" title="刪除">×</button>
+        </div>
+      `).join('');
+
+      // 綁定刪除
+      list.querySelectorAll('.expense-delete').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const id = Number(btn.dataset.id);
+          if (confirm('確定刪除這筆？')) {
+            state.expenses = state.expenses.filter(x => x.id !== id);
+            saveState();
+            updateUI();
+          }
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // ==================== 事件 ====================
+    document.getElementById('btnAddExpense').addEventListener('click', () => {
+      document.getElementById('expenseForm').classList.add('show');
+      document.getElementById('settingsForm').classList.remove('show');
+      document.getElementById('expenseDate').value = todayStr();
+      document.getElementById('expenseNote').value = '';
+      document.getElementById('expenseAmount').value = '';
+      document.getElementById('expenseNote').focus();
+    });
+
+    document.getElementById('btnCancelExpense').addEventListener('click', () => {
+      document.getElementById('expenseForm').classList.remove('show');
+    });
+
+    document.getElementById('btnSaveExpense').addEventListener('click', () => {
+      const date = document.getElementById('expenseDate').value;
+      const note = document.getElementById('expenseNote').value.trim();
+      const amount = Number(document.getElementById('expenseAmount').value);
+
+      if (!date || !amount || amount <= 0) {
+        alert('請填日期和金額');
+        return;
+      }
+
+      state.expenses.push({
+        id: Date.now(),
+        date,
+        note: note || '未命名',
+        amount
+      });
+      saveState();
+      document.getElementById('expenseForm').classList.remove('show');
+      updateUI();
+    });
+
+    document.getElementById('btnSettings').addEventListener('click', () => {
+      document.getElementById('settingsForm').classList.add('show');
+      document.getElementById('expenseForm').classList.remove('show');
+      document.getElementById('weeklyBudgetInput').value = state.weeklyBudget || '';
+    });
+
+    document.getElementById('btnCancelSettings').addEventListener('click', () => {
+      document.getElementById('settingsForm').classList.remove('show');
+    });
+
+    document.getElementById('btnSaveSettings').addEventListener('click', () => {
+      const val = Number(document.getElementById('weeklyBudgetInput').value);
+      if (!val || val < 100) {
+        alert('請輸入合理的每週預算（至少 100）');
+        return;
+      }
+      state.weeklyBudget = val;
+      saveState();
+      document.getElementById('settingsForm').classList.remove('show');
+      // 不重算過去的，只影響未來
+      updateUI();
+    });
+
+    // 首次設定
+    document.getElementById('btnStart').addEventListener('click', () => {
+      const val = Number(document.getElementById('setupBudget').value);
+      if (!val || val < 100) {
+        alert('請輸入合理的每週預算（例如 1500）');
+        return;
+      }
+      state.weeklyBudget = val;
+      state.totalAllocated = 0;
+      state.lastSaturday = null;
+      state.expenses = [];
+      applyWeeklyBudget(); // 會給第一週的錢
+      saveState();
+      document.getElementById('setupOverlay').classList.add('hidden');
+      updateUI();
+    });
+
+    // ==================== 初始化 ====================
+    loadState();
+    if (state.weeklyBudget > 0) {
+      document.getElementById('setupOverlay').classList.add('hidden');
+      applyWeeklyBudget();
+      updateUI();
+    }
+  </script>
+</body>
+</html>
